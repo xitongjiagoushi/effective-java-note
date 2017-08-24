@@ -30,13 +30,11 @@ public static <K, V> HashMap<K, V> newInstance() {
 }
 ```
 
----
-**旁白：**现在来看并不需要这种方法，从Java 7开始，范型实例初始化可直接省略实例中的范型声明，即：
+***旁白*** 现在来看并不需要这种方法，从Java 7开始，范型实例初始化可直接省略实例中的范型声明，即：
 
 ```
 Map<String, List<String>> m = new HashMap<>();
 ```
----
 
 
 同时有以下**缺点**：
