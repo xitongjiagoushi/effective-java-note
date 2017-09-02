@@ -293,11 +293,11 @@ public class InstrumentedSet<E> extends ForwardingSet<E> {
 组合(composition)是装饰器模式的实现原理。有时组合也被称为委派(delegation)，但严格来说委派要求包装类将其自身传入被包装类中(参考java.util.concurrent.Executors#DelegatedExecutorService)。
 
 
-## [17]. 精心设计并为继承书写Java doc，否则就不要继承
+## [17]. 精心设计并为继承书写Java doc，否则不要使用继承
 
-在使用类间继承时，必须经过精心设计并书写`Java doc`。`Java doc`一般以`This implementation`开头，这在一定程度上会影响设计良好的API的宗旨，即接口不必关注实现方式，只需声明自己是做什么的。
+在使用类间继承时，必须经过精心设计并书写`Java doc`。`Java doc`一般以`This implementation`开头。这会影响设计良好的API的宗旨，即接口不必关注实现方式，只需声明自己是做什么的(???)。
 
-设计类间继承时，为了方便的进行子类继承，父类一般需要提供钩子(hooks)，谨慎的选择可见性为`protected`的方法，某些情况下也需要提供可见性为`protected`的字段。如何决定提供哪些`protected`方法和字段没有银弹，最好的方式是仔细考虑，并通过书写子类进行测试，在灵活性和稳定性间寻找平衡。测试时可以参考的经验是书写三个子类，其中一个或多个由非父类的书写者完成。
+设计类间继承时，为了方便的进行子类继承，父类一般需要提供钩子(hook)，谨慎的选择可见性为`protected`的方法，某些情况下也需要提供可见性为`protected`的字段。如何决定提供哪些`protected`方法和字段没有银弹，最好的方式是仔细考虑，并通过书写子类进行测试，在灵活性和稳定性间寻找平衡。测试时可以参考的经验是书写三个子类，其中一个或多个由非父类的书写者完成。
 
 在设计类间继承时，还要遵循以下两点：
 
@@ -314,7 +314,72 @@ public class InstrumentedSet<E> extends ForwardingSet<E> {
 
 ## [18]. 接口优于抽象类
 
+Java提供了接口和抽象类两种机制来进行类型声明，并允许多种不同实现。接口和抽象类间最明显的不同是抽象类允许包含方法实现，而接口中不允许(***注*** Java 8中允许接口中实现方法，通过`default`关键字修饰，如`default void sayHi() {  // implementation }`)。另一个重要的不同点是，
+
+
+补充：
+skeletal implementation (abstract)
+simple implementation (concrete)
+
+
+
+相对于使用接口指定类型来说，使用抽象类有一个较大的优点是抽象类更新十分容易。在更新抽象类时，只需在抽象类中将新方法实现即可，且所有子类都可以使用该新方法。接口无法做到这一点(***注*** Java 8中接口已可以包含一个或多个默认实现)，接口一旦发布并被广泛使用后，就几乎不可能再被修改，因此一定要精心设计，且在版本确定前让尽可能多的使用者使用接口，以便在还可以修改时发现问题。
 
 
 
 
+
+
+## [21]. 使用方法对象表示策略
+
+
+
+举的一个`java.lang.String`中的例子，用
+
+
+```
+public static final Comparator<String> CASE_INSENSITIVE_ORDER
+                                     = new CaseInsensitiveComparator();
+private static class CaseInsensitiveComparator
+        implements Comparator<String>, java.io.Serializable {
+    // use serialVersionUID from JDK 1.2.2 for interoperability
+    private static final long serialVersionUID = 8575799808933029326L;
+
+    public int compare(String s1, String s2) {
+        int n1 = s1.length();
+        int n2 = s2.length();
+        int min = Math.min(n1, n2);
+        for (int i = 0; i < min; i++) {
+            char c1 = s1.charAt(i);
+            char c2 = s2.charAt(i);
+            if (c1 != c2) {
+                c1 = Character.toUpperCase(c1);
+                c2 = Character.toUpperCase(c2);
+                if (c1 != c2) {
+                    c1 = Character.toLowerCase(c1);
+                    c2 = Character.toLowerCase(c2);
+                    if (c1 != c2) {
+                        // No overflow because of numeric promotion
+                        return c1 - c2;
+                    }
+                }
+            }
+        }
+        return n1 - n2;
+    }
+    /** Replaces the de-serialized object. */
+    private Object readResolve() { return CASE_INSENSITIVE_ORDER; }
+}
+```
+
+## [22]. 静态内部类优于非静态内部类
+
+
+static member class
+non-static member class
+anonymous class
+local class
+
+---
+a local class can only access local variables that are declared final
+(in java 8, there is 'effectively final')
